@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tiejaksojen keliennusteiden haku</title>
+  <link rel="stylesheet" href="">
+
+
+  <style>
+  
+    input {
+      height: 35px;
+      width: 250px;
+      font-style: italic; 
+    }
+
+    .rws-box { 
+      background: #ccddee;
+      float: left;
+      margin: 10px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .single-rws-box {
+      background: #cceecc;
+      float: left;
+      margin: 10px;
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .rws-box:hover { 
+      box-shadow: inset 0px 0px 26px 13px rgba(255,255,255,0.66);
+    }
+  
+    .clickable { cursor: pointer; }
+
+    table#results {
+      width: 100%;
+    }
+
+    /* stripes in table rows */
+    tr:nth-child(odd) {
+      background-color: #dadada;
+    }
+
+
+    ul {
+
+      list-style-type: none;
+      text-align: left;
+    }
+
+    li {
+      padding: 10px 20px;
+      background: #efafaf;
+      border: 1px solid lightslategray;
+
+    }
+
+    li:hover {
+      background: blue;
+      color: white;
+    }
+
+    .big-button {
+
+      background: aliceblue;
+      width: 100px;
+      height: 40px;
+
+    }
+
+
+  </style>
+
+</head>
+<body>
+
+    <div style="text-align: center; margin: auto;">
+
+        <img src='https://corporate.foreca.com/en/uploads/Symbolset-1/d321.png' style="width: 100px;"></img>
+
+        <h1>Ennustukset</h1>
+        <p>Ennustukset tiejaksoille Digitrafficin rajapinnasta</p>
+     
+        <p>
+          <input type="text" id="searchSection" placeholder="Syötä kenttään tiejakson nimi">
+          <ul id='sections-wrapper'></ul>
+        </p>
+
+        <button id='get-forecast' class='big-button'>Hae</button>
+
+    </div>
+
+
+    <div id='header-wrapper'></div>
+
+    <div id='conditions-wrapper'></div>
+
+
+
+
+
+
+
+    <script>
+
+        const conditions = []
+
+        const sections = []
+
+
+        // toteuta näin:
+        // 1. haetaan "forecast-sections" metatiedoista descriptionin perusteella id
+        // 2. haetaan "road-conditions" datasta id:n perusteella havainto ja ennustukset
+        // 3. näytetään halutut havainto ja ennustukset eri tuntien välein nätisti
+
+
+
+
+        //const road_block_id = '00012_201_000_0' // teiskontie
+
+
+
+        const forecast_sections_endpoint = 'https://tie.digitraffic.fi/api/v1/metadata/forecast-sections'
+
+        // huom. v2 sisältää tarkemmat tiejaksot, joissa ilmeisesti myös teiskontie mukana tms.
+        // kokeile sitäkin, mutta silloin pitää palotella jotenkin että mitä haetaan esim vain vt12 tiedot
+        const road_conditions_endpoint = 'https://tie.digitraffic.fi/api/v1/data/road-conditions'
+
+        const weather_symbol_base_url = 'https://corporate.foreca.com/en/uploads/Symbolset-1/'
+
+
+
+        // haetaan kaikkien tiejaksojen metatiedot
+        function getSections() {
+
+          console.log('getSections')
+
+          // haetaan kaikkien tiejaksojen metatiedot digitrafficista
+          fetch(forecast_sections_endpoint)
+            .then(response => response.json())
+            .then(data => {
+
+              data.forecastSections.features.forEach(section => {
+                sections.push(section)
+              })
+
+            })
+            
+        }
+
+
+
+        // haetaan tiejakson ennustus  tiejakso-id:lle
+        function getConditions(section_id) {
+
+            console.log('getConditions', 'Haetaan dataa...')
+            console.log("endpoint for conditions", road_conditions_endpoint)
+
+            // Haetaan kaikki tiedot digitrafficin rajapinnasta
+            fetch(road_conditions_endpoint)
+              .then(response => response.json())
+              .then(data => {
+
+                console.log(data.weatherData)
+
+                // yhden tiejakson tiedot
+                const condition = data.weatherData
+                                        .find(condition => condition.id === section_id)
+                
+                conditions.push(condition)
+                
+                console.log('getConditions', 'Dataa haettu!')
+              })
+
+        }
+
+
+
+        function search() {
+
+          const match = document.getElementById('searchSection').value
+
+          searchSections(match)
+
+        }
+
+
+
+        function searchSections(pattern) {
+
+          // Filtteröidään hakutermin perusteella
+          const filtered_list = sections.filter(s => {
+
+            const regex = new RegExp(pattern, 'gi');
+
+            return    (s.properties.id === pattern) ||
+                        (s.properties.description.match(regex))
+            
+          })
+
+          console.log(filtered_list)
+
+          displaySearchResults(filtered_list)
+
+          // Jos vain yksi vaihtoehto jäljellä, näytetään ennustukset sille
+          if (filtered_list.length < 2) {
+            showForecast(filtered_list)
+          }
+
+        }
+
+
+        function showForecast(section_list) {
+
+          // otetaan vain yksi mutta tähän voi myöhemmin laittaa useita
+          /*
+          section_list.forEach(s => {
+            
+            console.log(s.properties.id)
+
+          })
+          */
+
+          const section_id = section_list[0].properties.id
+
+          console.log(section_id)
+
+          getConditions(section_id)
+          
+
+        }
+
+
+
+
+        // yksittäisen tiejakson valinta hakukentän avaamalta listalta
+        function selectItem(item) {
+
+          document.getElementById('searchSection').value = item
+
+          searchSections(item)
+
+        }
+
+
+
+
+        function displaySearchResults(sections_list) {
+
+          // Käydään kaikki tiejaksot läpi ja muodostetaan niistä html-elementtejä
+          const sections_html = sections_list.map(s => {
+  
+            const item = s.properties.description
+
+            return `
+                      <li onclick='selectItem("${item}");'>${item}</li>
+                  `
+
+          }).join('')
+  
+          document.getElementById('sections-wrapper').innerHTML = sections_html
+
+        }
+
+
+
+        function displayHeader() {
+
+          const road_block_id = conditions[0].id
+
+          const header_html = `
+
+                                  <h1>Sääennuste - Teiskontie</h1>
+                                  <h2>${road_block_id}</h2>
+
+          `
+
+          document.getElementById('header-wrapper').innerHTML = header_html
+
+        }
+
+
+        function showDate(timestamp) {
+
+          const d = new Date(timestamp)
+          const days = (d.getDate() < 10 ? '0' : '') + d.getDate()
+          const months = (d.getMonth()+1)
+
+          return days + '.' + months + '.'
+        
+        }
+
+
+        function showTime(timestamp) {
+
+          const t = new Date(timestamp)
+          const hours = (t.getHours() < 10 ? '0' : '') + t.getHours()
+          const mins = (t.getMinutes() < 10 ? '0' : '') + t.getMinutes()
+
+          return hours + ':' + mins
+
+        }
+
+
+        function showWindSymbol(wind_direction) {
+
+          //const wind_direction_deg = wind_direction
+
+          const wind_symbol_url = 'https://www.ilmatieteenlaitos.fi/img/wind-symbol-north-pos.svg'
+
+          const wind_symbol_html = `<img src="${wind_symbol_url}" style="transform: rotate(${wind_direction + 180}deg);" />`
+
+          return wind_symbol_html
+
+        }
+
+
+        function displayConditions() {
+
+
+            console.table(conditions)
+
+            const road_block_conditions = conditions[0].roadConditions
+
+            
+            // Käydään tiejakson ennustukset läpi ja muodostetaan html-tauhkaa
+                     
+            const conditions_html = `<table id='results'>
+                                        <thead>
+                                          <th>Ennuste</th>
+                                          <th>Pvm</th>
+                                          <th>Klo</th>
+                                          <th>Ilman lämpötila</th>
+                                          <th>Tien lämpötila</th>
+                                          <th>Tuulen nopeus</th>
+                                          <th>Tuulen suunta</th>
+                                          <th></th>
+                                          <th></th>
+                                        </thead>`
+                                      
+                                      + road_block_conditions.map(condition => {
+              
+                                          return `      
+
+                                              <tr>
+                                              
+                                                <td><b>${condition.forecastName}</b></td>
+                                                <td>${showDate(condition.time)}</td>
+                                                <td>${showTime(condition.time)}
+                                                <td>${condition.temperature}</td>
+                                                <td>${condition.roadTemperature}</td>
+                                                <td>${condition.windSpeed} m/s</td>
+                                                <td>${condition.windDirection}</td>
+                                                <td>${showWindSymbol(condition.windDirection)}</td>
+                                                <td><img src='${weather_symbol_base_url}${condition.weatherSymbol}.png' /></td>
+                                                
+                                              </tr>
+
+                                            `
+            
+                                        // Huom! Joinaa mappausvaiheessa ja liitä koko html rimpsu innerHTML:ään.
+                                        // Älä looppaa .innerHTML operaatiota. Se on tuskastuttavan hidasta!!!
+                                        }).join('') 
+                                        
+                                        + `</table>`
+
+            document.getElementById('conditions-wrapper').innerHTML = conditions_html
+
+        }
+
+
+
+
+
+        function init() {
+
+
+
+          const searchInput = document.getElementById('searchSection')
+
+          searchInput.addEventListener('change', search)
+          searchInput.addEventListener('keyup', search)
+
+          const getButton = document.getElementById('get-forecast')
+
+          getButton.addEventListener('click', displayConditions)
+
+          getSections()
+
+        }
+
+
+
+        // Kun koko dokumentti on latautunut suoritetaan alustuskoodi sivulle
+        document.addEventListener("DOMContentLoaded", init)
+
+
+
+
+    </script>
+
+</body>
+</html>
