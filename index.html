@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OmaKeli - Tiejaksojen keliennusteiden haku</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
+  
+
+    <!-- Omat tyylimuokkaukset -->
+
+    <style>
+  
+      ul {
+
+        border: 1px solid #dbdbdb;
+        border-radius: 4px;
+
+        padding: 10px;
+
+      }
+
+      li {
+
+        padding: 10px;
+        font-size: 1.5rem;
+
+      }
+
+
+      li:hover {
+        background: #3298dc;
+        color: white;
+        cursor: pointer;
+        border-radius: 2px;
+      }
+  
+      .plus {
+        color: red;
+      }
+
+      .minus {
+        color: blue;
+      }
+
+      .with-border-radius {
+        border-radius: 4px;        
+      }
+
+
+    </style>
+
+  
+  </head>
+
+  <body>
+
+    <section class="section">
+
+      <div class="container">
+
+
+
+        <h1 class="title">OmaKeli</h1>
+        <p class="subtitle">Keliennusteet tiejaksoille Digitrafficin rajapinnasta</p>
+    
+
+        <div class="field has-addons">
+        
+          <div class="control is-expanded">
+            <input id="searchSection" class="input is-large" type="text" placeholder="Hae tiejakson nimen osalla" autofocus>
+          </div>
+        
+          <div class="control">
+            <a class="button is-info is-large" id="get-forecast">Hae</a>
+          </div>
+
+        </div>
+
+        <div id="sections-wrapper"></div>
+        
+
+      </div>
+
+
+
+      <div id='header-wrapper'></div>
+
+      <div id='conditions-wrapper'></div>
+
+
+
+    </section>
+
+
+    <script>
+
+
+
+        /*
+
+          Sivulla käytetyt vakiot
+
+        */
+
+        // Tiejaksojen metatiedot Digitrafficin avoimesta rajapinnasta
+        const forecast_sections_endpoint = 'https://tie.digitraffic.fi/api/v1/metadata/forecast-sections'
+
+        // Tiejaksojen keliennusteet Digitrafficin avoimesta rajapinnasta
+        const road_conditions_endpoint = 'https://tie.digitraffic.fi/api/v1/data/road-conditions'
+
+        // Sääsymbolit Forecan sivuilta
+        const weather_symbol_base_url = 'https://corporate.foreca.com/en/uploads/Symbolset-1/'
+
+
+
+        /*
+
+          M - Model
+
+        */
+
+
+        // Section -objekti toteuttaa tarvittavat toimenpiteet tiejaksojen käsittelyä varten.       
+        let Section = {
+
+          // Taulukko tiejaksojen metatiedoille
+          list: [],
+
+          // Hakee kaikkien tiejaksojen metatiedot Digitrafficista
+          loadList: function() {
+
+            console.log('Haetaan tietoja osoitteesta ' + forecast_sections_endpoint)
+
+            fetch(forecast_sections_endpoint)
+              .then(response => response.json())
+              .then(data => {
+
+                data.forecastSections.features.forEach(section => {
+                  Section.list.push(section)
+                })              
+
+              })
+              .then(console.log('Tiejaksojen tiedot haettu.'))
+
+          },
+
+          // Etsii tiejaksoista ne joiden kuvaus vastaa annettua hakutermiä ja palauttaa listan niistä
+          searchList: function(pattern) {
+
+            // Filtteröidään hakutermin perusteella
+            const filtered_list = Section.list.filter(s => {
+
+              const regex = new RegExp(pattern, 'gi');
+
+              // Hakutuloksia voi hakea tiejakson id tai description -kenttien mukaan
+              return (s.properties.id === pattern) || (s.properties.description.match(regex))
+              
+            })
+
+            return filtered_list
+            
+          },
+
+          // Etsii tiejaksoista parametrina annettuun sopivaa ja palauttaa vain yhden hakutuloksen.
+          // Jos tyhjä palauttaa falsen.
+          findOne: function(pattern) {
+
+            const list = Section.searchList(pattern)
+
+            if (list.length < 1) return false
+
+            return list[0]
+
+          }
+
+
+
+        }
+
+
+
+        // Condition -objekti toteuttaa tarvittavat toimenpiteet yksittäisen tiejakson keliennusteen käsittelyä varten.
+        let Condition = {
+
+          // Taulukko tiejaksojen keliennusteille
+          list: [],
+
+          data_updated_time: '',
+          
+          // Hakee kaikkien tiejaksojen keliennusteet Digitrafficin rajapinnasta ja tallentaa taulukkoon
+          loadList: function() {
+
+            console.log('Haetaan tietoja osoitteesta ' + road_conditions_endpoint)
+
+            fetch(road_conditions_endpoint)
+              .then(res => res.json())
+              .then(data => {
+
+                Condition.data_updated_time = data.dataUpdatedTime
+                
+                data.weatherData.forEach(item => {
+                  Condition.list.push(item)
+                })
+
+              })
+              .then(console.log('Keliennusteiden tiedot haettu.'))
+
+          },        
+          
+          // Etsii keliennusteen halutulle tiejaksolle tiejakso-id:n perusteella.
+          // Palauttaa vain yhden hakutuloksen.
+          findOne: function(id) {
+
+            return Condition.list.find(condition => condition.id === id)
+
+          }
+
+
+        }
+
+
+
+
+
+
+        /*
+
+          V - View
+
+          Näyttää haluttua dataa joka on talletettuna malleihin.
+
+        */
+        let View = {
+
+
+          /* Jos haluttaisiin käyttää datalistia automaattisesti täydentyvän listan luomiseen niin tämän funktion avulla voisi luoda optiot */
+          createDatalist: function() {
+
+            const sections_list = Section.list
+            
+            const sections_html = sections_list.map(s => {
+  
+              const item = s.properties.description
+
+              return `
+                      <option value="${item}">
+                    `
+
+            }).join('')
+
+            document.getElementById('road-sections').innerHTML = sections_html
+
+          },
+
+          
+          // Näyttää hakukentässä ehdotukset tiejaksoista jotka vastaavat käyttäjän syöttämää hakutermiä
+          displaySectionOptions: function(sections_list) {
+
+            // Käydään kaikki tiejaksot läpi ja muodostetaan niistä html-elementtejä
+            const sections_html = sections_list.map(s => {
+  
+              const item = s.properties.description
+
+              return `
+                        <li onclick='App.choose("${item}");'>${item}</li>
+                    `
+
+            }).join('')
+
+            const list_html = `<ul id="sections-wrapper" class="with-border-radius">${sections_html}</ul>`
+
+            document.getElementById('sections-wrapper').innerHTML = list_html
+
+          },
+
+
+          // Näyttää ennusteet valitulta tiejaksolta. Tiejakson tiedot syötetään parametrina.
+          displayConditions: function(conditions) {
+
+            // Käydään tiejakson ennustukset läpi ja muodostetaan samanlainen html-palikka kaikille
+            // (Ensimmäinen ennusteista on viimeisin mittaustulos.)
+            const conditions_html = conditions.roadConditions.map(condition => {
+  
+              return `
+
+                <div class="hero is-bold has-text-centered with-border-radius" style="border-radius: 4px; background: #e7f0fa; margin-bottom: 10px;">
+                  <div class="hero-body">
+
+                    <div class="container">
+
+                      
+                      <div class="columns is-vcentered">
+
+                        <div class="column">
+                          <h2 class="subtitle">
+                            ${View.showTime(condition.time)}
+                          </h2>
+                        </div>
+
+                        <div class="column">
+                          <img src='${weather_symbol_base_url}${condition.weatherSymbol}.png' />  
+                        </div>
+
+                        <div class="column">
+                          <h1 class="title ${View.tempClass(condition.temperature)}">
+                            ${View.showDegs(condition.temperature)}
+                          </h1>
+                        </div>
+
+                        <div class="column">
+                          <h1 class="title ${View.tempClass(condition.roadTemperature)}">
+                            ${View.showDegs(condition.roadTemperature)}
+                          </h1>
+                        </div>
+
+                      </div>
+
+                    </div>
+                  
+                  </div>
+                </div>
+              
+                `
+            
+            }).join('')
+
+            document.getElementById('conditions-wrapper').innerHTML = conditions_html
+
+          },
+
+
+          // Otsikkorivi, jossa näytetään valitun tiejakson tiedot    
+          displaySectionHeader: function(section, data_updated_time) {
+
+            const latest_update = View.showDate(data_updated_time) + ' ' + View.showTime(data_updated_time)
+
+            const header_html = `
+
+
+                                  <div class="hero has-text-centered-i" style="border-radius: 4px; background: #e7f0fa; margin: 10px 0px;">
+                                    <div class="hero-body">
+                                      <h2 class='title'>${section.properties.description}</h2>
+                                      <p class='subtitle'>Viimeksi päivitetty ${latest_update}</p>                                   
+                                    </div>
+                                  </div>
+
+            `
+
+            document.getElementById('header-wrapper').innerHTML = header_html
+
+          },
+
+          // Apufunktio päivämäärän muotoiluun
+          showDate: function(timestamp) {
+
+            const d = new Date(timestamp)
+            const days = (d.getDate() < 10 ? '0' : '') + d.getDate()
+            const months = (d.getMonth()+1)
+            const year = d.getFullYear()
+
+            return days + '.' + months + '.' + year
+
+          },
+
+          // Apufunktio kellonajan muotoiluun
+          showTime: function(timestamp) {
+
+            const t = new Date(timestamp)
+            const hours = (t.getHours() < 10 ? '0' : '') + t.getHours()
+            const mins = (t.getMinutes() < 10 ? '0' : '') + t.getMinutes()
+
+            return hours + ':' + mins
+
+          },
+
+          // Apufunktio lämpötila-merkkijonon muotoiluun
+          // DT:n rajapinnasta tulevissa arvoissa on epämääräisesti välillä '+'-merkkejä ja välillä ei.
+          showDegs: function(str) {
+
+            // Poistetaan +-merkit lukeman edestä ja lisätään asteen merkki loppuun
+            return str.replace('+','') + '&#176;'
+
+          },
+
+          // Apufunktio. Palauttaa oikean css-luokan sen mukaan onko lämpötila plussan puolella vai pakkasella
+          tempClass(temp) {
+
+            if (parseFloat(temp) < 0) return 'minus'
+
+            return 'plus'
+
+          }
+
+
+        }
+
+
+
+
+
+        /*
+
+          C - Controller
+          Sivun toimintaan liittyvät funktiot omassa oliossaan
+
+        */
+        let App = {
+
+
+          // Sivun alustus: Tapahtumankäsittelijöiden lisäys, Tiejaksojen tietojen lataaminen Digitrafficista
+          init: function() {
+
+            const searchInput = document.getElementById('searchSection')
+
+            // Aina kun käyttäjä syöttää hakukenttään jotain näppäimistöltään alkaa vaihtoehtojen haku
+            searchInput.addEventListener('keyup', App.search)
+
+            const getButton = document.getElementById('get-forecast')
+
+            getButton.addEventListener('click', App.show)
+
+            // Tiejaksojen ja ennusteiden lataaminen rajapinnasta
+            Section.loadList()
+            Condition.loadList()
+
+          },
+
+          // Hakukentän toiminta. Kun käyttäjä syöttää hakukenttään syötettä, 
+          // haetaan tiejaksoja syötteen mukaan käyttäjän kirjoittaessa
+          search: function() {
+
+            const match = document.getElementById('searchSection').value
+
+            // Haetaan hakuehtoja vain jos käyttäjä on syöttänyt jotakin hakukenttään
+            if (match.length < 2) return false;
+            
+            const section_options = Section.searchList(match)
+            View.displaySectionOptions(section_options)
+
+          },
+
+          // Listan klikkaaminen valitsee tiejakson hakukenttään
+          choose: function(item) {
+
+            // siirtää valinnan hakukenttään
+            document.getElementById('searchSection').value = item
+
+            // tyhjentää listan kun sitä on klikattu
+            document.getElementById('sections-wrapper').innerHTML = ''      
+
+          },
+
+          // Hakupainikkeen toiminta. Kun klikataan painiketta, näytetään valitun tiejakson ennusteet
+          show: function() {
+
+            const section = Section.findOne(document.getElementById('searchSection').value)
+
+            if (!section) {
+
+              console.log('Haettu tiejakso tuntematon')
+              return false
+
+            }
+
+            const section_id = section.properties.id
+
+            let conditions = Condition.findOne(section_id)
+
+            View.displaySectionHeader(section, Condition.data_updated_time)
+            View.displayConditions(conditions)
+
+          }
+
+
+        }
+
+
+        // Kun koko dokumentti on latautunut suoritetaan alustuskoodi sivulle
+        document.addEventListener("DOMContentLoaded", App.init)
+
+
+    </script>
+
+  </body>
+
+</html>
