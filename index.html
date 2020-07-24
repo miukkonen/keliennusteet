@@ -1,108 +1,134 @@
 <!DOCTYPE html>
-<html lang="fi">
-<head>
-  <meta charset="UTF-8">
-  <title>Tiejaksojen keliennusteiden haku</title>
-  <link rel="stylesheet" href="">
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tiejaksojen keliennusteiden haku</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.0/css/bulma.min.css">
 
 
-  <style>
-  
-    input {
-      height: 35px;
-      width: 250px;
-      font-style: italic; 
-    }
+    <!-- Custom styles -->
 
-    .rws-box { 
-      background: #ccddee;
-      float: left;
-      margin: 10px;
-      padding: 10px;
-      border-radius: 5px;
-    }
+    <style>
 
-    .single-rws-box {
-      background: #cceecc;
-      float: left;
-      margin: 10px;
-      padding: 10px;
-      border-radius: 5px;
-    }
+      /*
+      input {
+        height: 35px;
+        width: 250px;
+        font-style: italic;
+      }
 
-    .rws-box:hover { 
-      box-shadow: inset 0px 0px 26px 13px rgba(255,255,255,0.66);
-    }
-  
-    .clickable { cursor: pointer; }
+      .rws-box {
+        background: #ccddee;
+        float: left;
+        margin: 10px;
+        padding: 10px;
+        border-radius: 5px;
+      }
 
-    table#results {
-      width: 100%;
-    }
+      .single-rws-box {
+        background: #cceecc;
+        float: left;
+        margin: 10px;
+        padding: 10px;
+        border-radius: 5px;
+      }
 
-    /* stripes in table rows */
-    tr:nth-child(odd) {
-      background-color: #dadada;
-    }
+      .rws-box:hover {
+        box-shadow: inset 0px 0px 26px 13px rgba(255,255,255,0.66);
+      }
 
+      .clickable { cursor: pointer; }
 
-    ul {
+      table#results {
+        width: 100%;
+      }*/
 
-      list-style-type: none;
-      text-align: left;
-    }
+      /* stripes in table rows */
 
-    li {
-      padding: 10px 20px;
-      background: #efafaf;
-      border: 1px solid lightslategray;
-
-    }
-
-    li:hover {
-      background: blue;
-      color: white;
-    }
-
-    .big-button {
-
-      background: aliceblue;
-      width: 100px;
-      height: 40px;
-
-    }
+      /*
+      tr:nth-child(odd) {
+        background-color: #dadada;
+      }
 
 
-  </style>
+      ul {
 
-</head>
-<body>
+        list-style-type: none;
+        text-align: left;
+      }
 
-    <div style="text-align: center; margin: auto;">
+      li {
+        padding: 10px 20px;
+        background: #efafaf;
+        border: 1px solid lightslategray;
+
+      }
+
+      */
+
+      li:hover {
+        background: blue;
+        color: white;
+      }
+
+
+      /*
+      .big-button {
+
+        background: aliceblue;
+        width: 100px;
+        height: 40px;
+
+      }
+      */
+
+    </style>
+
+
+  </head>
+
+  <body>
+
+    <section class="section">
+
+      <div class="container" style="">
 
         <img src='https://corporate.foreca.com/en/uploads/Symbolset-1/d321.png' style="width: 100px;"></img>
 
-        <h1>Ennustukset</h1>
-        <p>Ennustukset tiejaksoille Digitrafficin rajapinnasta</p>
-     
-        <p>
-          <input type="text" id="searchSection" placeholder="Syötä kenttään tiejakson nimi">
-          <ul id='sections-wrapper'></ul>
-        </p>
-
-        <button id='get-forecast' class='big-button'>Hae</button>
-
-    </div>
+        <h1 class="title">tieKeli</h1>
+        <p class="subtitle">Keliennusteet tiejaksoille Digitrafficin rajapinnasta</p>
 
 
-    <div id='header-wrapper'></div>
+        <div class="field has-addons">
 
-    <div id='conditions-wrapper'></div>
+          <div class="control is-expanded">
+            <input id="searchSection" class="input is-large" type="text" placeholder="Hae tiejakson nimen osalla">
+          </div>
+
+          <div class="control">
+            <a class="button is-info is-large" id="get-forecast">
+              Hae
+            </a>
+          </div>
+
+        </div>
+
+        <ul id="sections-wrapper"></ul>
+
+      </div>
+
+
+
+      <div id='header-wrapper'></div>
+
+      <div id='conditions-wrapper'></div>
 
 
 
 
-
+    </section>
 
 
     <script>
@@ -149,7 +175,7 @@
               })
 
             })
-            
+
         }
 
 
@@ -170,9 +196,9 @@
                 // yhden tiejakson tiedot
                 const condition = data.weatherData
                                         .find(condition => condition.id === section_id)
-                
+
                 conditions.push(condition)
-                
+
                 console.log('getConditions', 'Dataa haettu!')
               })
 
@@ -199,7 +225,7 @@
 
             return    (s.properties.id === pattern) ||
                         (s.properties.description.match(regex))
-            
+
           })
 
           console.log(filtered_list)
@@ -219,7 +245,7 @@
           // otetaan vain yksi mutta tähän voi myöhemmin laittaa useita
           /*
           section_list.forEach(s => {
-            
+
             console.log(s.properties.id)
 
           })
@@ -230,7 +256,7 @@
           console.log(section_id)
 
           getConditions(section_id)
-          
+
 
         }
 
@@ -253,7 +279,7 @@
 
           // Käydään kaikki tiejaksot läpi ja muodostetaan niistä html-elementtejä
           const sections_html = sections_list.map(s => {
-  
+
             const item = s.properties.description
 
             return `
@@ -261,7 +287,7 @@
                   `
 
           }).join('')
-  
+
           document.getElementById('sections-wrapper').innerHTML = sections_html
 
         }
@@ -275,7 +301,7 @@
           const header_html = `
 
                                   <h1>Sääennuste - Teiskontie</h1>
-                                  <h2>${road_block_id}</h2>
+<h2>${road_block_id}</h2>
 
           `
 
@@ -291,7 +317,7 @@
           const months = (d.getMonth()+1)
 
           return days + '.' + months + '.'
-        
+
         }
 
 
@@ -326,49 +352,49 @@
 
             const road_block_conditions = conditions[0].roadConditions
 
-            
+
             // Käydään tiejakson ennustukset läpi ja muodostetaan html-tauhkaa
-                     
-            const conditions_html = `<table id='results'>
-                                        <thead>
-                                          <th>Ennuste</th>
-                                          <th>Pvm</th>
-                                          <th>Klo</th>
-                                          <th>Ilman lämpötila</th>
-                                          <th>Tien lämpötila</th>
-                                          <th>Tuulen nopeus</th>
-                                          <th>Tuulen suunta</th>
-                                          <th></th>
-                                          <th></th>
-                                        </thead>`
-                                      
-                                      + road_block_conditions.map(condition => {
-              
-                                          return `      
 
-                                              <tr>
-                                              
-                                                <td><b>${condition.forecastName}</b></td>
-                                                <td>${showDate(condition.time)}</td>
-                                                <td>${showTime(condition.time)}
-                                                <td>${condition.temperature}</td>
-                                                <td>${condition.roadTemperature}</td>
-                                                <td>${condition.windSpeed} m/s</td>
-                                                <td>${condition.windDirection}</td>
-                                                <td>${showWindSymbol(condition.windDirection)}</td>
-                                                <td><img src='${weather_symbol_base_url}${condition.weatherSymbol}.png' /></td>
-                                                
-                                              </tr>
+            const conditions_html = road_block_conditions.map(condition => {
 
-                                            `
-            
-                                        // Huom! Joinaa mappausvaiheessa ja liitä koko html rimpsu innerHTML:ään.
-                                        // Älä looppaa .innerHTML operaatiota. Se on tuskastuttavan hidasta!!!
-                                        }).join('') 
-                                        
-                                        + `</table>`
+                return `
 
-            document.getElementById('conditions-wrapper').innerHTML = conditions_html
+                  <div class="hero is-light-i is-medium-i is-bold has-text-centered" style="background: #e7f0fa; margin-bottom: 10px;">
+                    <div class="hero-body">
+
+                      <div class="container">
+
+
+                        <div class="columns is-vcentered">
+
+                          <div class="column">
+                            <h2 class="subtitle">
+                              ${showTime(condition.time)}
+                            </h2>
+                          </div>
+
+                          <div class="column">
+                            <img src='${weather_symbol_base_url}${condition.weatherSymbol}.png' />
+                          </div>
+
+                          <div class="column">
+                            <h1 class="title" style="color: red;">
+                              ${condition.temperature}&#176;
+                            </h1>
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+                  </div>
+
+                  `
+                }).join('')
+
+
+document.getElementById('conditions-wrapper').innerHTML = conditions_html
 
         }
 
@@ -403,5 +429,6 @@
 
     </script>
 
-</body>
+  </body>
+
 </html>
