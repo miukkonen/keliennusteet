@@ -314,6 +314,20 @@
                           </h1>
                         </div>
 
+                        <div class="column">
+                          <p>
+                            ${View.showConditionText(condition.overallRoadCondition)}
+                          </p>
+                        </div>
+
+                        <div class="column">
+                          <p>
+                            ${condition.forecastConditionReason ? View.showConditionText(condition.forecastConditionReason.roadCondition) : ''}
+                          </p>
+                        </div>
+
+
+
                       </div>
 
                     </div>
@@ -389,6 +403,13 @@
             if (parseFloat(temp) < 0) return 'minus'
 
             return 'plus'
+
+          },
+
+          // Apufunktio tien kuntoa kuvaavien tekstien muotoiluun
+          showConditionText: function(str) {
+
+            return str.replace('_', ' ')
 
           }
 
