@@ -392,6 +392,9 @@
           // DT:n rajapinnasta tulevissa arvoissa on epämääräisesti välillä '+'-merkkejä ja välillä ei.
           showDegs: function(str) {
 
+            // Varaudutaan siihen että rajapinnasta tullut kenttä onkin 'undefined'
+            if (!str) return ''
+
             // Poistetaan +-merkit lukeman edestä ja lisätään asteen merkki loppuun
             return str.replace('+','') + '&#176;'
 
@@ -408,6 +411,9 @@
 
           // Apufunktio tien kuntoa kuvaavien tekstien muotoiluun
           showConditionText: function(str) {
+
+            // Välillä rajapinnasta tulevat kentät ovat määrittelemättömiä (undefined)
+            if (!str) return ''
 
             return str.replace('_', ' ')
 
