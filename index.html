@@ -105,10 +105,10 @@
         */
 
         // Tiejaksojen metatiedot Digitrafficin avoimesta rajapinnasta
-        const forecast_sections_endpoint = 'https://tie.digitraffic.fi/api/v1/metadata/forecast-sections'
+        const forecast_sections_endpoint = 'https://tie.digitraffic.fi/api/weather/v1/forecast-sections'
 
         // Tiejaksojen keliennusteet Digitrafficin avoimesta rajapinnasta
-        const road_conditions_endpoint = 'https://tie.digitraffic.fi/api/v1/data/road-conditions'
+        const road_conditions_endpoint = 'https://tie.digitraffic.fi/api/weather/v1/forecast-sections/forecasts'
 
         // Sääsymbolit Forecan sivuilta
         const weather_symbol_base_url = 'https://cache.foreca.net/static/img/symb-70x70/'
@@ -136,7 +136,7 @@
               .then(response => response.json())
               .then(data => {
 
-                data.forecastSections.features.forEach(section => {
+                data.features.forEach(section => {
                   Section.list.push(section)
                 })              
 
@@ -199,7 +199,7 @@
 
                 Condition.data_updated_time = data.dataUpdatedTime
                 
-                data.weatherData.forEach(item => {
+                data.forecastSections.forEach(item => {
                   Condition.list.push(item)
                 })
 
@@ -280,8 +280,8 @@
 
             // Käydään tiejakson ennustukset läpi ja muodostetaan samanlainen html-palikka kaikille
             // (Ensimmäinen ennusteista on viimeisin mittaustulos.)
-            const conditions_html = conditions.roadConditions.map(condition => {
-  
+            const conditions_html = conditions.forecasts.map(forecast => {
+
               return `
 
                 <div class="hero is-bold has-text-centered with-border-radius" style="border-radius: 4px; background: #e7f0fa; margin-bottom: 10px;">
@@ -294,35 +294,35 @@
 
                         <div class="column">
                           <h2 class="subtitle">
-                            ${View.showTime(condition.time)}
+                            ${View.showTime(forecast.time)}
                           </h2>
                         </div>
 
                         <div class="column">
-                          <img src='${weather_symbol_base_url}${condition.weatherSymbol}.png' />  
+                          <img src='${weather_symbol_base_url}${forecast.weatherSymbol}.png' />  
                         </div>
 
                         <div class="column">
-                          <h1 class="title ${View.tempClass(condition.temperature)}">
-                            ${View.showDegs(condition.temperature)}
+                          <h1 class="title ${View.tempClass(forecast.temperature)}">
+                            ${forecast.temperature}
                           </h1>
                         </div>
 
                         <div class="column">
-                          <h1 class="title ${View.tempClass(condition.roadTemperature)}">
-                            ${View.showDegs(condition.roadTemperature)}
+                          <h1 class="title ${View.tempClass(forecast.roadTemperature)}">
+                            ${forecast.roadTemperature}
                           </h1>
                         </div>
 
                         <div class="column">
                           <p>
-                            ${View.showConditionText(condition.overallRoadCondition)}
+                            ${View.showConditionText(forecast.overallRoadCondition)}
                           </p>
                         </div>
 
                         <div class="column">
                           <p>
-                            ${condition.forecastConditionReason ? View.showConditionText(condition.forecastConditionReason.roadCondition) : ''}
+                            ${forecast.forecastConditionReason ? View.showConditionText(forecast.forecastConditionReason.roadCondition) : ''}
                           </p>
                         </div>
 
@@ -396,7 +396,7 @@
             if (!str) return ''
 
             // Poistetaan +-merkit lukeman edestä ja lisätään asteen merkki loppuun
-            return str.replace('+','') + '&#176;'
+            //return str.replace('+','') + '&#176;'
 
           },
 
